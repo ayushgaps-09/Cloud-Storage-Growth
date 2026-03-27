@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 
 st.set_page_config(page_title="Cloud Storage Growth Model", layout="wide")
 
-st.title("☁️ Cloud Storage Growth Predictor")
+st.title("☁️ Cloud Storage Growth Model")
 st.write("This app predicts corporate cloud storage usage using a logistic growth model.")
 
 # Sidebar Inputs
