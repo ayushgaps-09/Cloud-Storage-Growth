@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 
 # ---------------- PAGE SETUP ----------------
 st.set_page_config(
-    page_title="Cloud Storage Growth Simulator",
+    page_title="Cloud Storage Growth Model",
     page_icon="☁️",
     layout="wide"
 )
