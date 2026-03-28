@@ -135,7 +135,7 @@ ax4.grid(True)
 st.pyplot(fig4)
 
 # ---------------- DATA TABLE ----------------
-st.subheader("📋 Daily Storage Data")
+st.subheader("📋 𝗗𝗔𝗜𝗟𝗬 𝗦𝗧𝗢𝗥𝗔𝗚𝗘 𝗗𝗔𝗧𝗔")
 st.dataframe(df)
 
 csv = df.to_csv(index=False).encode("utf-8")
