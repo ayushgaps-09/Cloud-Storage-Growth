@@ -1,92 +1,157 @@
 import streamlit as st
 import numpy as np
+import pandas as pd
 import matplotlib.pyplot as plt
 
-st.set_page_config(page_title="Cloud Storage Growth Model", layout="wide")
+# ------------------ PAGE CONFIG ------------------
+st.set_page_config(
+    page_title="Cloud Storage Growth Simulator",
+    page_icon="☁️",
+    layout="wide"
+)
 
-st.title("☁️ Cloud Storage Growth Model")
-st.write("This app predicts corporate cloud storage usage using a logistic growth model.")
+st.title("☁️ Cloud Storage Growth Simulator")
+st.markdown("### Predict storage usage using **Exponential + Logistic Growth Model**")
 
-# Sidebar Inputs
-st.sidebar.header("Model Parameters")
+# ------------------ SIDEBAR ------------------
+st.sidebar.header("⚙️ Simulation Parameters")
 
 initial_storage = st.sidebar.slider(
-    "Initial Storage Used (GB)", min_value=1, max_value=500, value=50
+    "Initial Storage (GB)", 1, 500, 50
+)
+
+daily_upload = st.sidebar.slider(
+    "Daily Upload (GB/day)", 1, 50, 5
 )
 
 growth_rate = st.sidebar.slider(
-    "Growth Rate", min_value=0.01, max_value=0.2, value=0.05, step=0.01
+    "Growth Rate", 0.01, 0.2, 0.05
 )
 
 capacity = st.sidebar.slider(
-    "Maximum Storage Capacity (GB)", min_value=100, max_value=5000, value=1000
+    "Maximum Storage Capacity (GB)", 100, 5000, 1000
 )
 
 days_to_simulate = st.sidebar.slider(
-    "Days to Simulate", min_value=30, max_value=365, value=120
+    "Simulation Days", 30, 365, 120
 )
 
-# Logistic Growth Function
-def storage_growth(t, K, S0, r):
+expansion_size = st.sidebar.slider(
+    "Planned Expansion Size (GB)", 100, 5000, 500
+)
+
+# ------------------ MODELS ------------------
+
+def exponential_growth(t, S0, r):
+    return S0 * np.exp(r * t)
+
+def logistic_growth(t, K, S0, r):
     A = (K - S0) / S0
     return K / (1 + A * np.exp(-r * t))
 
-# Generate Data
-days = np.linspace(0, days_to_simulate, days_to_simulate)
-storage = storage_growth(days, capacity, initial_storage, growth_rate)
+# Hybrid model
+def hybrid_model(days, S0, r, K, daily):
+    storage = []
+    for t in days:
+        exp_val = exponential_growth(t, S0, r)
+        log_val = logistic_growth(t, K, S0, r)
 
-# Plot Graph
-st.subheader("📈 Storage Growth Over Time")
+        # switch to logistic when nearing capacity
+        value = min(exp_val, log_val) + daily * t
+        storage.append(value)
+    return np.array(storage)
 
-fig, ax = plt.subplots()
-ax.plot(days, storage)
-ax.axhline(capacity, linestyle="--")
+# ------------------ DATA GENERATION ------------------
+days = np.arange(0, days_to_simulate)
+storage = hybrid_model(days, initial_storage, growth_rate, capacity, daily_upload)
+
+df = pd.DataFrame({
+    "Day": days,
+    "Storage Used (GB)": storage
+})
+
+# ------------------ METRICS ------------------
+st.subheader("📊 Key Metrics")
+
+col1, col2, col3, col4 = st.columns(4)
+
+col1.metric("Initial Storage", f"{initial_storage} GB")
+col2.metric("Daily Upload", f"{daily_upload} GB")
+col3.metric("Capacity", f"{capacity} GB")
+col4.metric("Growth Rate", f"{growth_rate}")
+
+# ------------------ GRAPH ------------------
+st.subheader("📈 Storage Growth Forecast")
+
+fig, ax = plt.subplots(figsize=(10, 5))
+ax.plot(days, storage, label="Predicted Storage", linewidth=2)
+ax.axhline(capacity, linestyle="--", label="Max Capacity")
 ax.set_xlabel("Days")
-ax.set_ylabel("Storage Used (GB)")
-ax.set_title("Predicted Cloud Storage Usage")
+ax.set_ylabel("Storage (GB)")
+ax.legend()
+ax.grid(True)
 
 st.pyplot(fig)
 
-# Capacity Analysis
-st.subheader("📊 Capacity Analysis")
+# ------------------ CAPACITY ANALYSIS ------------------
+st.subheader("🚨 Capacity & Expansion Planning")
 
-current_day_80 = None
+threshold = 0.8 * capacity
+expansion_day = None
+
 for i, val in enumerate(storage):
-    if val >= 0.8 * capacity:
-        current_day_80 = i
+    if val >= threshold:
+        expansion_day = i
         break
 
-col1, col2, col3 = st.columns(3)
-
-col1.metric("Initial Storage", f"{initial_storage} GB")
-col2.metric("Capacity", f"{capacity} GB")
-col3.metric("Growth Rate", f"{growth_rate}")
-
-if current_day_80:
-    st.warning(f"⚠️ Storage will reach **80% capacity** around **day {current_day_80}**. Plan expansion before this.")
+if expansion_day:
+    st.error(
+        f"⚠️ Storage will reach **80% capacity on day {expansion_day}**."
+    )
+    st.info(
+        f"📦 Recommended: Expand storage by **{expansion_size} GB** before day {expansion_day}"
+    )
 else:
-    st.success("Storage will remain below 80% capacity within the simulation period.")
+    st.success("✅ Storage remains within safe limits during simulation.")
 
-# Data Table
-st.subheader("📋 Simulated Data")
+# ------------------ EXPANSION SIMULATION ------------------
+expanded_capacity = capacity + expansion_size
 
-data = {
-    "Day": days.astype(int),
-    "Storage Used (GB)": storage.round(2)
-}
+expanded_storage = np.minimum(storage, expanded_capacity)
 
-st.dataframe(data)
+fig2, ax2 = plt.subplots(figsize=(10, 5))
+ax2.plot(days, expanded_storage, label="After Expansion")
+ax2.axhline(expanded_capacity, linestyle="--", label="Expanded Capacity")
+ax2.legend()
+ax2.grid(True)
 
-# Project Explanation Section
+st.subheader("📉 After Expansion Scenario")
+st.pyplot(fig2)
+
+# ------------------ DATA TABLE ------------------
+st.subheader("📋 Daily Storage Data")
+st.dataframe(df)
+
+# download option
+csv = df.to_csv(index=False).encode("utf-8")
+st.download_button(
+    "⬇️ Download Data as CSV",
+    csv,
+    "storage_simulation.csv",
+    "text/csv"
+)
+
+# ------------------ MODEL EXPLANATION ------------------
 with st.expander("📘 Model Explanation"):
-    st.write("""
-    The model uses **logistic growth** to simulate cloud storage usage:
+    st.markdown("""
+### Exponential Growth
+Early-stage cloud usage grows rapidly:
+S(t) = S0 * e^(rt)
 
-    S(t) = K / (1 + A * e^(-rt))
+### Logistic Growth
+As storage approaches capacity:
+S(t) = K / (1 + A e^(-rt))
 
-    where:
-    - S(t): storage at time t
-    - K: storage capacity
-    - r: growth rate
-    - A: constant from initial storage
-    """)
+### Hybrid Model
+This project combines both models to simulate real-world storage usage.
+""")
