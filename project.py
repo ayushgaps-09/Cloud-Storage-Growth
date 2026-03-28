@@ -10,11 +10,11 @@ st.set_page_config(
     layout="wide"
 )
 
-st.title("☁️ Cloud Storage Growth Simulator")
+st.title("☁️ 𝗖𝗟𝗢𝗨𝗗 𝗦𝗧𝗢𝗥𝗔𝗚𝗘 𝗚𝗥𝗢𝗪𝗧𝗛 𝗠𝗢𝗗𝗘𝗟")
 st.markdown("### Exponential vs Logistic vs Hybrid Growth Models")
 
 # ---------------- SIDEBAR ----------------
-st.sidebar.header("⚙️ Simulation Controls")
+st.sidebar.header("⚙️ 𝚂𝚒𝚖𝚞𝚕𝚊𝚝𝚒𝚘𝚗 𝙲𝚘𝚗𝚝𝚛𝚘𝚕")
 
 initial_storage = st.sidebar.slider("Initial Storage (GB)", 1, 500, 50)
 daily_upload = st.sidebar.slider("Daily Upload (GB/day)", 1, 50, 5)
