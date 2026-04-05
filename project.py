@@ -10,7 +10,7 @@ st.set_page_config(
     layout="wide"
 )
 
-st.title("☁️ CLOUD STORAGE GROWTH MODEL")
+st.title("d CLOUD STORAGE GROWTH MODEL")
 st.markdown("### Exponential vs Logistic vs Hybrid Growth Models")
 
 # ---------------- SIDEBAR ----------------
