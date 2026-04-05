@@ -10,18 +10,27 @@ st.set_page_config(
     layout="wide"
 )
 
-st.title("☁️ 𝗖𝗟𝗢𝗨𝗗 𝗦𝗧𝗢𝗥𝗔𝗚𝗘 𝗚𝗥𝗢𝗪𝗧𝗛 𝗠𝗢𝗗𝗘𝗟")
+st.title("☁️ CLOUD STORAGE GROWTH MODEL")
 st.markdown("### Exponential vs Logistic vs Hybrid Growth Models")
 
 # ---------------- SIDEBAR ----------------
-st.sidebar.header("⚙️ 𝚂𝚒𝚖𝚞𝚕𝚊𝚝𝚒𝚘𝚗 𝙲𝚘𝚗𝚝𝚛𝚘𝚕")
+st.sidebar.header("⚙️ Simulation Control")
 
-initial_storage = st.sidebar.slider("Initial Storage (GB)", 1, 500, 50)
-daily_upload = st.sidebar.slider("Daily Upload (GB/day)", 1, 50, 5)
-growth_rate = st.sidebar.slider("Growth Rate", 0.01, 0.2, 0.05)
-capacity = st.sidebar.slider("Maximum Capacity (GB)", 100, 5000, 1000)
-days_to_simulate = st.sidebar.slider("Simulation Days", 30, 365, 120)
-expansion_size = st.sidebar.slider("Expansion Size (GB)", 100, 5000, 500)
+initial_storage = st.sidebar.slider("Initial Storage (GB)", 1, 500, 10)
+daily_upload = st.sidebar.slider("Daily Upload (GB/day)", 1, 50, 1)
+growth_rate = st.sidebar.slider("Growth Rate", 0.01, 0.2, 0.02)
+capacity = st.sidebar.slider("Maximum Capacity (GB)", 100, 5000, 3818)
+days_to_simulate = st.sidebar.slider("Simulation Days", 30, 365, 30)
+expansion_size = st.sidebar.slider("Expansion Size (GB)", 100, 5000, 100)
+
+# ---------------- SHOW INPUT VALUES ----------------
+st.subheader("📌 Selected Input Values")
+st.write(f"Initial Storage: {initial_storage} GB")
+st.write(f"Daily Upload: {daily_upload} GB/day")
+st.write(f"Growth Rate: {growth_rate}")
+st.write(f"Capacity: {capacity} GB")
+st.write(f"Simulation Days: {days_to_simulate}")
+st.write(f"Expansion Size: {expansion_size} GB")
 
 # ---------------- MODELS ----------------
 def exponential_growth(t, S0, r):
@@ -40,65 +49,49 @@ def hybrid_model(days, S0, r, K, daily):
         storage.append(value)
     return np.array(storage)
 
-# ---------------- DATA GENERATION ----------------
+# ---------------- DATA ----------------
 days = np.arange(0, days_to_simulate)
 
 exp_storage = exponential_growth(days, initial_storage, growth_rate)
 log_storage = logistic_growth(days, capacity, initial_storage, growth_rate)
 hybrid_storage = hybrid_model(days, initial_storage, growth_rate, capacity, daily_upload)
 
-df = pd.DataFrame({
-    "Day": days,
-    "Exponential": exp_storage,
-    "Logistic": log_storage,
-    "Hybrid": hybrid_storage
-})
-
-# ---------------- METRICS ----------------
-st.subheader("📊 Current Parameters")
-
-col1, col2, col3, col4 = st.columns(4)
-col1.metric("Initial Storage", f"{initial_storage} GB")
-col2.metric("Daily Upload", f"{daily_upload} GB/day")
-col3.metric("Capacity", f"{capacity} GB")
-col4.metric("Growth Rate", f"{growth_rate}")
-
 # ---------------- EXPONENTIAL GRAPH ----------------
 st.subheader("📈 Exponential Growth")
 
 fig1, ax1 = plt.subplots()
-ax1.plot(days, exp_storage)
+ax1.plot(days, exp_storage, label="Exponential Growth")
 ax1.set_xlabel("Days")
 ax1.set_ylabel("Storage (GB)")
-ax1.set_title("Exponential Growth - Unlimited Increase")
+ax1.set_title("Exponential Growth")
+ax1.legend()
 ax1.grid(True)
-
 st.pyplot(fig1)
 
 # ---------------- LOGISTIC GRAPH ----------------
 st.subheader("📉 Logistic Growth")
 
 fig2, ax2 = plt.subplots()
-ax2.plot(days, log_storage)
-ax2.axhline(capacity, linestyle="--")
+ax2.plot(days, log_storage, label="Logistic Growth")
+ax2.axhline(capacity, linestyle="--", label="Max Capacity")
 ax2.set_xlabel("Days")
 ax2.set_ylabel("Storage (GB)")
-ax2.set_title("Logistic Growth - Saturation Near Capacity")
+ax2.set_title("Logistic Growth")
+ax2.legend()
 ax2.grid(True)
-
 st.pyplot(fig2)
 
 # ---------------- HYBRID GRAPH ----------------
-st.subheader("☁️ Hybrid Growth Prediction")
+st.subheader("☁️ Hybrid Growth")
 
 fig3, ax3 = plt.subplots()
-ax3.plot(days, hybrid_storage, linewidth=2)
-ax3.axhline(capacity, linestyle="--")
+ax3.plot(days, hybrid_storage, linewidth=2, label="Hybrid Model")
+ax3.axhline(capacity, linestyle="--", label="Capacity Limit")
 ax3.set_xlabel("Days")
 ax3.set_ylabel("Storage (GB)")
-ax3.set_title("Combined Exponential + Logistic Growth")
+ax3.set_title("Hybrid Growth")
+ax3.legend()
 ax3.grid(True)
-
 st.pyplot(fig3)
 
 # ---------------- CAPACITY ANALYSIS ----------------
@@ -113,52 +106,52 @@ for i, val in enumerate(hybrid_storage):
         break
 
 if expansion_day is not None:
-    st.error(f"⚠️ Storage will reach 80% capacity on **day {expansion_day}**.")
-    st.info(f"📦 Recommended expansion: **+{expansion_size} GB** before this day.")
+    st.error(f"⚠️ Storage reaches 80% on day {expansion_day}")
+    st.info(f"📦 Add +{expansion_size} GB before this day")
 else:
-    st.success("✅ Storage remains within safe limits.")
+    st.success("✅ Storage is safe")
 
-# ---------------- EXPANSION SIMULATION ----------------
+# ---------------- EXPANSION GRAPH ----------------
 expanded_capacity = capacity + expansion_size
 expanded_storage = np.minimum(hybrid_storage, expanded_capacity)
 
-st.subheader("📉 Storage After Expansion")
+st.subheader("📉 After Expansion")
 
 fig4, ax4 = plt.subplots()
-ax4.plot(days, expanded_storage)
-ax4.axhline(expanded_capacity, linestyle="--")
+ax4.plot(days, expanded_storage, label="After Expansion")
+ax4.axhline(expanded_capacity, linestyle="--", label="New Capacity")
 ax4.set_xlabel("Days")
 ax4.set_ylabel("Storage (GB)")
-ax4.set_title("Storage Growth After Capacity Expansion")
+ax4.set_title("Storage After Expansion")
+ax4.legend()
 ax4.grid(True)
-
 st.pyplot(fig4)
 
-# ---------------- DATA TABLE ----------------
-st.subheader("📋 𝗗𝗔𝗜𝗟𝗬 𝗦𝗧𝗢𝗥𝗔𝗚𝗘 𝗗𝗔𝗧𝗔")
-st.dataframe(df)
-
-csv = df.to_csv(index=False).encode("utf-8")
-st.download_button(
-    "⬇️ Download CSV",
-    csv,
-    "storage_data.csv",
-    "text/csv"
-)
-
 # ---------------- EXPLANATION ----------------
-with st.expander("📘 Model Explanation"):
-    st.markdown("""
-### Exponential Growth
-S(t) = S0 * e^(rt)
+st.subheader("📘 Explanation (Dynamic)")
 
-Shows rapid, unlimited growth in early stages.
+if growth_rate > 0.1:
+    st.write("🔴 High growth rate → Storage increases very fast")
+else:
+    st.write("🟢 Low growth rate → Storage increases slowly")
 
-### Logistic Growth
-S(t) = K / (1 + A * e^(-rt))
+if daily_upload > 20:
+    st.write("🔴 High daily upload → Faster capacity usage")
+else:
+    st.write("🟢 Low daily upload → Slower usage")
 
-Shows realistic growth that slows as capacity is reached.
+if capacity < 1000:
+    st.write("⚠️ Low capacity → System will fill quickly")
+else:
+    st.write("✅ High capacity → More storage available")
 
-### Hybrid Model
-This project combines both models and includes daily uploads to simulate real-world cloud storage usage.
-""")
+# ---------------- DATA TABLE ----------------
+df = pd.DataFrame({
+    "Day": days,
+    "Exponential": exp_storage,
+    "Logistic": log_storage,
+    "Hybrid": hybrid_storage
+})
+
+st.subheader("📋 Data Table")
+st.dataframe(df)
