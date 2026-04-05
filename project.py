@@ -12,7 +12,7 @@ st.markdown("### Exponential vs Logistic vs Hybrid Growth Models")
 # ---------------- SIDEBAR ----------------
 st.sidebar.header("⚙️ Simulation Control")
 
-# -------- INPUT MODE --------
+# Input mode (Slider + Manual)
 input_mode = st.sidebar.radio("Choose Input Method", ["Slider", "Manual Input"])
 
 if input_mode == "Slider":
@@ -22,7 +22,6 @@ if input_mode == "Slider":
     capacity = st.sidebar.slider("Maximum Capacity (GB)", 100, 5000, 3818)
     days_to_simulate = st.sidebar.slider("Simulation Days", 30, 365, 30)
     expansion_size = st.sidebar.slider("Expansion Size (GB)", 100, 5000, 100)
-
 else:
     initial_storage = st.sidebar.number_input("Initial Storage (GB)", value=10)
     daily_upload = st.sidebar.number_input("Daily Upload (GB/day)", value=1)
@@ -64,9 +63,7 @@ ax1.set_xlabel("Days")
 ax1.set_ylabel("Storage (GB)")
 ax1.set_title("Exponential Growth")
 ax1.grid(True)
-
-ax1.legend(loc="upper left")   # ✅ FIX
-
+ax1.legend(loc="upper left")
 st.pyplot(fig1)
 
 # ---------------- LOGISTIC GRAPH ----------------
@@ -79,9 +76,7 @@ ax2.set_xlabel("Days")
 ax2.set_ylabel("Storage (GB)")
 ax2.set_title("Logistic Growth")
 ax2.grid(True)
-
-ax2.legend(loc="upper left")   # ✅ FIX
-
+ax2.legend(loc="upper left")
 st.pyplot(fig2)
 
 # ---------------- HYBRID GRAPH ----------------
@@ -94,16 +89,41 @@ ax3.set_xlabel("Days")
 ax3.set_ylabel("Storage (GB)")
 ax3.set_title("Hybrid Growth")
 ax3.grid(True)
-
-ax3.legend(loc="upper left")   # ✅ FIX
-
+ax3.legend(loc="upper left")
 st.pyplot(fig3)
+
+# ---------------- CAPACITY ANALYSIS ----------------
+st.subheader("🚨 Capacity Analysis")
+
+threshold = 0.8 * capacity
+expansion_day = None
+
+for i, val in enumerate(hybrid_storage):
+    if val >= threshold:
+        expansion_day = i
+        break
+
+if expansion_day is not None:
+    st.markdown(f"""
+    <div style="background-color:#4b1e1e;padding:20px;border-radius:15px;margin-bottom:15px">
+        <h3 style="color:#ff6b6b;">⚠️ Storage will reach 80% capacity on day {expansion_day}</h3>
+    </div>
+    """, unsafe_allow_html=True)
+
+    st.markdown(f"""
+    <div style="background-color:#1e3a5f;padding:20px;border-radius:15px;">
+        <h3 style="color:#4dabf7;">📦 Recommended expansion: +{expansion_size} GB before this day</h3>
+    </div>
+    """, unsafe_allow_html=True)
+
+else:
+    st.success("✅ Storage remains within safe limits.")
 
 # ---------------- EXPANSION GRAPH ----------------
 expanded_capacity = capacity + expansion_size
 expanded_storage = np.minimum(hybrid_storage, expanded_capacity)
 
-st.subheader("📉 After Expansion")
+st.subheader("📉 Storage After Expansion")
 
 fig4, ax4 = plt.subplots()
 ax4.plot(days, expanded_storage, label="After Expansion", linewidth=2)
@@ -112,7 +132,43 @@ ax4.set_xlabel("Days")
 ax4.set_ylabel("Storage (GB)")
 ax4.set_title("Storage After Expansion")
 ax4.grid(True)
-
-ax4.legend(loc="upper left")   # ✅ FIX
-
+ax4.legend(loc="upper left")
 st.pyplot(fig4)
+
+# ---------------- DATA TABLE ----------------
+st.subheader("📋 DAILY STORAGE DATA")
+
+df = pd.DataFrame({
+    "Day": days,
+    "Exponential": exp_storage,
+    "Logistic": log_storage,
+    "Hybrid": hybrid_storage
+})
+
+st.dataframe(df, use_container_width=True)
+
+# Download button
+csv = df.to_csv(index=False).encode("utf-8")
+
+st.download_button(
+    "⬇️ Download CSV",
+    csv,
+    "storage_data.csv",
+    "text/csv"
+)
+
+# ---------------- EXPLANATION ----------------
+with st.expander("📘 Model Explanation"):
+    st.markdown("""
+### Exponential Growth
+S(t) = S0 * e^(rt)  
+➡️ Fast and unlimited growth
+
+### Logistic Growth
+S(t) = K / (1 + A * e^(-rt))  
+➡️ Growth slows near capacity
+
+### Hybrid Model
+➡️ Combines real-world usage with daily uploads
+➡️ Most realistic model
+""")
